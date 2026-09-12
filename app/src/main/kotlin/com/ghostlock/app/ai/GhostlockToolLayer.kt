@@ -321,16 +321,21 @@ class GhostlockToolLayer(
         return null
     }
 
-    private fun handleCheckRoot(): Triple<Int, String, Int> {
+    private suspend fun handleCheckRoot(): Triple<Int, String, Int> {
         val idResult = handleExecuteShell("id 2>&1", 5)
         val suResult = handleExecuteShell("su -c 'id' 2>&1", 5)
+        val hasRoot = suResult.second.contains("uid=0")
         val output = buildString {
             appendLine("shell id: ${idResult.second.trim()}")
             appendLine("su id: ${suResult.second.trim()}")
-            val hasRoot = suResult.second.contains("uid=0")
             append("root: " + if (hasRoot) "YES" else "NO")
         }
-        return Triple(if (output.contains("root: YES")) 0 else 1, output, 0)
+        if (hasRoot) {
+            // root 成功后自动记录流程库（不依赖 AI 主动调用 save_playbook）
+            val saved = handleSavePlaybook("auto-recorded: check_root confirmed uid=0")
+            return Triple(0, "$output\n${saved.second}", 0)
+        }
+        return Triple(1, output, 0)
     }
 
     private fun com.ghostlock.app.domain.model.KernelSnapshot.cpuPairIndexLabel(index: Int): String =

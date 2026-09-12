@@ -52,6 +52,18 @@ class AiChatViewModel(
                 content = "⚠ 检测到上次 exploit 导致设备重启（花屏）。设备：${crash.deviceName}，内核：${crash.kernelRelease}，CPU pair=${crash.cpuPairIndex}，safe_mode=${crash.safeMode}。下次请换一个 CPU pair 重试，不要重复使用崩溃的参数。",
             )
         }
+        // 流程库：若本设备/内核已有成功配方，注入提示让 AI 直接套用
+        viewModelScope.launch {
+            val snap = repository.snapshot()
+            val matches = playbookRepo.findMatching(snap.kernelRelease, snap.deviceName)
+            if (matches.isNotEmpty()) {
+                val pb = matches.first()
+                _messages.value = _messages.value + AiChatMessage(
+                    role = AiRole.SYSTEM,
+                    content = "📚 本设备/内核已有成功提权配方 (id=${pb.id})：${pb.deviceName} / ${pb.kernelRelease}，cpu_pair=${pb.cpuPairIndex}，safe_mode=${pb.safeMode}，retry=${pb.retryCount}。请先调用 load_playbook 加载完整配方并直接套用，避免重复试错。",
+                )
+            }
+        }
     }
 
     fun getCrashLogs(): List<CrashLogRepository.CrashEntry> = crashLogRepo.list()

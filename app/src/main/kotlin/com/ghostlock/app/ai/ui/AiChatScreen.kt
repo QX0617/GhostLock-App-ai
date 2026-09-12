@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,6 +24,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -87,8 +89,10 @@ fun AiChatScreen(
     val loading by viewModel.loading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val crashCount by viewModel.crashCount.collectAsStateWithLifecycle()
+    val playbookCount by viewModel.playbookCount.collectAsStateWithLifecycle()
     var input by remember { mutableStateOf("") }
     var showCrashDialog by remember { mutableStateOf(false) }
+    var showPlaybookDialog by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val snackbar = remember { SnackbarHostState() }
 
@@ -122,6 +126,33 @@ fun AiChatScreen(
                         }
                     },
                     actions = {
+                        // 流程库按钮（成功配方，带数量角标）
+                        androidx.compose.foundation.layout.Box {
+                            IconButton(onClick = { viewModel.refreshPlaybookCount(); showPlaybookDialog = true }) {
+                                Icon(
+                                    Icons.Default.Bookmark,
+                                    contentDescription = "流程库",
+                                    tint = if (playbookCount > 0) Success else TextDim,
+                                )
+                            }
+                            if (playbookCount > 0) {
+                                androidx.compose.foundation.layout.Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(6.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(Success)
+                                        .padding(horizontal = 4.dp, vertical = 1.dp),
+                                ) {
+                                    Text(
+                                        playbookCount.toString(),
+                                        color = Color.White,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                }
+                            }
+                        }
                         // 崩溃日志按钮（带红色角标）
                         androidx.compose.foundation.layout.Box {
                             IconButton(onClick = { showCrashDialog = true }) {
@@ -227,6 +258,12 @@ fun AiChatScreen(
                 onCleared = { showCrashDialog = false },
             )
         }
+        if (showPlaybookDialog) {
+            PlaybookDialog(
+                viewModel = viewModel,
+                onDismiss = { showPlaybookDialog = false },
+            )
+        }
     }
 }
 
@@ -273,6 +310,60 @@ private fun CrashLogDialog(
             }
         },
         dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) {
+                Text("关闭", color = Accent)
+            }
+        },
+        containerColor = Surface,
+    )
+}
+
+@Composable
+private fun PlaybookDialog(
+    viewModel: AiChatViewModel,
+    onDismiss: () -> Unit,
+) {
+    var version by remember { mutableStateOf(0) }
+    val playbooks = remember(version) { viewModel.getPlaybooks() }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("流程库 (${playbooks.size})", color = TextPrimary, fontWeight = FontWeight.Bold) },
+        text = {
+            if (playbooks.isEmpty()) {
+                Text("暂无成功配方。root 成功后会自动记录，下次同设备可直接套用。", color = TextDim)
+            } else {
+                LazyColumn {
+                    items(playbooks) { p ->
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFFE8F5EC))
+                                .padding(10.dp),
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        "✓ ${p.deviceName}",
+                                        color = Success, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                                    )
+                                    Text("内核: ${p.kernelRelease}", color = TextDim, fontSize = 11.sp)
+                                }
+                                IconButton(onClick = { viewModel.deletePlaybook(p.id); version++ }) {
+                                    Icon(Icons.Default.Delete, contentDescription = "删除", tint = Failed, modifier = Modifier.size(20.dp))
+                                }
+                            }
+                            Text("SoC: ${p.socName.ifEmpty { "未知" }}", color = TextDim, fontSize = 11.sp)
+                            if (p.otaUrl.isNotBlank()) Text("OTA: ${p.otaUrl.take(60)}", color = TextDim, fontSize = 11.sp)
+                            Text("CPU pair: ${p.cpuPairIndex}  |  Safe mode: ${p.safeMode}  |  重试: ${p.retryCount}", color = TextDim, fontSize = 11.sp)
+                            if (p.notes.isNotBlank()) Text("备注: ${p.notes}", color = TextDim, fontSize = 11.sp)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
             androidx.compose.material3.TextButton(onClick = onDismiss) {
                 Text("关闭", color = Accent)
             }

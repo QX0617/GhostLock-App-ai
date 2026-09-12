@@ -35,6 +35,9 @@ class AiChatViewModel(
     private val _crashCount = MutableStateFlow(0)
     val crashCount: StateFlow<Int> = _crashCount.asStateFlow()
 
+    private val _playbookCount = MutableStateFlow(playbookRepo.list().size)
+    val playbookCount: StateFlow<Int> = _playbookCount.asStateFlow()
+
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
@@ -68,6 +71,13 @@ class AiChatViewModel(
 
     fun getCrashLogs(): List<CrashLogRepository.CrashEntry> = crashLogRepo.list()
     fun clearCrashLogs() { crashLogRepo.clear(); _crashCount.value = 0 }
+
+    fun getPlaybooks(): List<PlaybookRepository.Playbook> = playbookRepo.list()
+    fun deletePlaybook(id: String) {
+        playbookRepo.delete(id)
+        _playbookCount.value = playbookRepo.list().size
+    }
+    fun refreshPlaybookCount() { _playbookCount.value = playbookRepo.list().size }
 
     fun getActiveProviderName(): String = settingsRepo.getActiveProvider().let { "${it.name} · ${it.model}" }
 

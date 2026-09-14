@@ -1,4 +1,14 @@
-# GhostLock-App
+# GhostLock-App-ai (GhostLock AI)
+
+> This fork of [YuKongA/ghostlock-app](https://github.com/YuKongA/ghostlock-app) adds an **AI assistant** on top of the exploit:
+> - In-app AI chat that drives the root flow via function calling (run exploit, parse OTA, select CPU pair, check root, ...).
+> - **Playbook (流程库)**: records a recipe automatically when root succeeds, and suggests a matching recipe on next launch.
+> - **Crash logs**: snapshots the pre-exploit state synchronously; if the device panics/reboots, the next launch reports it.
+> - **AI settings**: provider / model / API key / iteration limit.
+>
+> Built APK (arm64-v8a) is attached to [Releases](../../releases).
+
+
 
 > 中文: [README_ZH.md](README_ZH.md)
 

@@ -494,6 +494,7 @@ private fun PortraitContent(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+        item(key = "ota_hint") {             OtaSourceHint(                 modifier = Modifier.fillMaxWidth(),             )         }
     }
 }
 
@@ -533,6 +534,7 @@ private fun LandscapeContent(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
+            item(key = "ota_hint") {                 OtaSourceHint(                     modifier = Modifier.fillMaxWidth(),                 )             }
         }
     }
 }
@@ -736,6 +738,34 @@ private fun AdvancedAction(
             .fillMaxWidth()
             .padding(top = 12.dp),
     )
+}
+
+@Composable
+private fun OtaSourceHint(modifier: Modifier = Modifier) {
+    val uriHandler = LocalUriHandler.current
+    Column(
+        modifier = modifier.padding(vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = stringResource(R.string.ota_source_hint),
+            fontSize = 12.sp,
+            color = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+        )
+        Text(
+            text = AnnotatedString(
+                text = "onfix.cn/rom",
+                spanStyle = SpanStyle(
+                    textDecoration = TextDecoration.Underline,
+                    color = MiuixTheme.colorScheme.primary,
+                ),
+            ),
+            modifier = Modifier
+                .padding(top = 2.dp)
+                .clickable { uriHandler.openUri("https://onfix.cn/rom") },
+            fontSize = 12.sp,
+        )
+    }
 }
 
 @Composable

@@ -52,4 +52,5 @@
     <string name="cpu_pair_label">CPU cores</string>
     <string name="safe_mode_label">Safe mode</string>
     <string name="safe_mode_summary">Disable all modules</string>
+    <string name="ota_source_hint">Get OTA link from</string>
 </resources>

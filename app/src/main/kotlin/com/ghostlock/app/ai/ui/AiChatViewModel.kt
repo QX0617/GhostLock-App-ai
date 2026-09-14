@@ -100,6 +100,8 @@ class AiChatViewModel(
         viewModelScope.launch {
             val userMsg = AiChatMessage(role = AiRole.USER, content = text)
             _messages.value = _messages.value + userMsg
+            // 用户消息立即落盘：后续 run_exploit 可能 panic 重启，避免本轮对话丢失
+            settingsRepo.saveChatHistory(_messages.value)
 
             agent.run(history, text, maxIter).collect { event ->
                 when (event) {
@@ -157,6 +159,8 @@ class AiChatViewModel(
                             )
                         )
                         _messages.value = list
+                        // 每个工具完成后增量落盘，崩溃重启后可恢复到最近一次工具结果
+                        settingsRepo.saveChatHistory(_messages.value)
                     }
                     is AiAgent.AgentEvent.Error -> {
                         _error.value = event.message

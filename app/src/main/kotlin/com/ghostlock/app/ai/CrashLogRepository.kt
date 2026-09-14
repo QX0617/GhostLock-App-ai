@@ -44,7 +44,7 @@ class CrashLogRepository(context: Context) {
             .putInt("pending_cpu_pair", cpuPairIndex)
             .putBoolean("pending_safe_mode", safeMode)
             .putString("pending_ota", otaInput)
-            .apply()
+            .commit()
     }
 
     /** exploit 正常返回时调用，清除 pending（说明没崩溃） */
